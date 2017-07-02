@@ -6,27 +6,15 @@ export default class App extends React.Component {
     super(props)
 
     this.state = {
-      contacts: null
+      contacts: null,
+      text: '',
     }
   }
 
   componentDidMount() {
-    return fetch('http://cryptic-crag-81902.herokuapp.com/api/contacts')
-      .then(response => response.json())
-      .then(responseJson => {
-
-        this.setState({
-          contacts: responseJson,
-        }, function() {
-          // do something with new state
-        })
-      })
-      .catch((error) => {
-        console.error(error)
-      })
+    return this.getContacts()
   }
 
-// Shake your phone to open the developer menu.
   render() {
     return (
       <View style={styles.container}>
@@ -35,12 +23,12 @@ export default class App extends React.Component {
             <View style={{flex: 1, padding: 10}}>
               <TextInput
                 style={{flex: 1, height: 40, padding: 5, fontSize: 18,}}
-                placeholder='Добавьте контакт'
+                placeholder='Create...'
                 onChangeText={(text) => this.setState({text})}
               />
             </View>
 
-            <TouchableHighlight onPress={this._onPressButton} underlayColor='#338cb8'>
+            <TouchableHighlight onPress={this.addContact} underlayColor='#338cb8'>
               <View style={styles.contactAdd}>
                 <Text style={styles.contactAddText}>+</Text>
               </View>
@@ -50,16 +38,16 @@ export default class App extends React.Component {
 
         <FlatList
           data={this.state.contacts}
-          keyExtractor={item => item.name}
+          keyExtractor={item => item._id}
           renderItem={({item}) => {return (
             <View style={styles.contact}>
-              <TouchableHighlight onPress={this._onPressButton} underlayColor='#338cb8' style={{flex: 1}}>
+              <TouchableHighlight onPress={() => {this.openContact(item.name)}} underlayColor='#338cb8' style={{flex: 1}}>
                 <View style={styles.contactDescription}>
                   <View style={styles.contactPicture}></View>
                   <Text style={styles.contactText}>{item.name}</Text>
                 </View>
               </TouchableHighlight>
-              <TouchableHighlight onPress={this._onPressButton} underlayColor='#338cb8'>
+              <TouchableHighlight onPress={() => {this.removeContact(item._id)}} underlayColor='#338cb8'>
                 <View style={styles.contactRemove}>
                   <Text style={styles.contactRemoveText}>-</Text>
                 </View>
@@ -71,14 +59,40 @@ export default class App extends React.Component {
     )
   }
 
-  _onPressButton() {
-    Alert.alert('You tapped the button!')
+  openContact(name) {
+    Alert.alert(`You tapped on ${name}! C:`)
+  }
+
+  addContact = () => {
+    if (!this.state.text) {
+      return
+    }
+
+    fetch('http://cryptic-crag-81902.herokuapp.com/api/contacts', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'},
+      body: `name=${this.state.text}&type=person`,
+    }).then(() => {this.getContacts()})
+  }
+
+  removeContact(id) {
+    fetch(`http://cryptic-crag-81902.herokuapp.com/api/contacts/${id}`, {
+      method: 'DELETE',
+    }).then(() => {this.getContacts()})
+  }
+
+  getContacts() {
+    this.setState({contacts: null})
+
+    return fetch('http://cryptic-crag-81902.herokuapp.com/api/contacts')
+      .then(response => response.json())
+      .then(responseJson => {this.setState({contacts: responseJson})})
   }
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#090f27',
+    backgroundColor: '#45b0cc',
     flex: 1,
     paddingTop: 24
   },
@@ -127,3 +141,4 @@ const styles = StyleSheet.create({
     paddingTop: 13,
   },
 });
+// Shake your phone to open the developer menu.
